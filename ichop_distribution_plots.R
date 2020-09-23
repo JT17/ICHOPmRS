@@ -1,12 +1,31 @@
 ##Histogram##
-setwd("~/Documents/R/ICHOPmRS/MGA")
+#setwd("~/Documents/R/ICHOPmRS/MGA")
 
 #Table 1
-source("ICHOPmRS/prepare_data.R")
-source("ICHOPmRS/table_helpers.R")
+
 library(grid)
 
-data_dir="Data/"
+#data_dir="Data/"
+
+WHO_AM_I = "JT"
+if(!exists("MASTER_WRAPPER")){
+  rm(list = setdiff(ls(), c("WHO_AM_I")))
+  if(WHO_AM_I=="SB"){
+    setwd("/Users/SBruce 1/repos/ICHOPmRS/") #Set working Directory
+    data_dir="/Users/SBruce 1/Desktop/RESEARCH/iCHOP Stroke/data/"
+    save_dir="/Users/SBruce 1/Desktop/RESEARCH/iCHOP Stroke/tables/"
+  }else if(WHO_AM_I=="JT"){
+    setwd("/Users/JonathanTiao/source/ICHOPmRS/")
+    data_dir = '/Users/JonathanTiao/source/ICHOPmRS/data/'
+    save_dir = '/Users/JonathanTiao/source/ICHOPmRS/tables/'
+  }
+  else if(WHO_AM_I == 'MGA'){
+    
+  }
+  data_name = 'ichop_data' #GIVE THE PROPER NAME
+}
+source("prepare_data.R")
+source("table_helpers.R")
 
 char_data = read.csv(paste0(data_dir,"ichop_data_POST.csv"),stringsAsFactors = F)
 for(i in 1:nrow(char_data)) {

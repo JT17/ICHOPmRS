@@ -1,6 +1,6 @@
 #Initialize data
 library(ordinal)
-WHO_AM_I = "SB"
+WHO_AM_I = "JT"
 if(!exists("MASTER_WRAPPER")){
   rm(list = setdiff(ls(), c("WHO_AM_I")))
   if(WHO_AM_I=="SB"){

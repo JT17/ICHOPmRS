@@ -1,17 +1,8 @@
 #Table 1
-source("prepare_data.R")
-source("table_helpers.R")
-library(grid)
-library("DescTools")
-library(openxlsx)
-library(table1)
-library(boot)
 
-<<<<<<< HEAD
-WHO_AM_I = "SB"
-=======
+
 WHO_AM_I = "JT"
->>>>>>> 8530db8c84cbd7a947c11ece279cf905cc5e4a05
+
 if(!exists("MASTER_WRAPPER")){
   rm(list = setdiff(ls(), c("WHO_AM_I")))
   if(WHO_AM_I=="SB"){
@@ -28,6 +19,14 @@ if(!exists("MASTER_WRAPPER")){
   }
   data_name = 'ichop_data' #GIVE THE PROPER NAME
 }
+
+source("prepare_data.R")
+source("table_helpers.R")
+library(grid)
+library("DescTools")
+library(openxlsx)
+library(table1)
+library(boot)
 
 char_data = read.csv(paste0(data_dir,"ichop_data_POST.csv"),stringsAsFactors = F)
 field_dict = read.csv(paste0(data_dir,"field_dict.csv"),stringsAsFactors = F)
