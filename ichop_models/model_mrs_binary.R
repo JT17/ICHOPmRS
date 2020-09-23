@@ -1,11 +1,11 @@
 #Initialize data
 library(ordinal)
 library(ggplot2)
-WHO_AM_I = "JT"
+WHO_AM_I = "SB"
 if(!exists("MASTER_WRAPPER")){
   rm(list = setdiff(ls(), c("WHO_AM_I")))
   if(WHO_AM_I=="SB"){
-    setwd("/Users/SBruce 1/repos/ICHOPmRS/") #Set working Directory
+    setwd("/Users/SBruce 1/repos/research/ICHOPmRS/") #Set working Directory
     data_dir="/Users/SBruce 1/Desktop/RESEARCH/iCHOP Stroke/data/"
     save_dir="/Users/SBruce 1/Desktop/RESEARCH/iCHOP Stroke/tables/"
   }else if(WHO_AM_I=="JT"){
