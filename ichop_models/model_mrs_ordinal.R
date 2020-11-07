@@ -25,8 +25,6 @@ mapping <- read.csv(paste0(data_dir,"/field_dict.csv"),row.names=2)
 mapping$NewFields <- rownames(mapping)
 mapping$Local <- F
 
-BASELINE_COVAR = F
-
 #Pre-processing
 comorbs = as.character(mapping$Fields[which(mapping$Tag == "Comorbidity")])
 meds = as.character(mapping$Fields[which(mapping$Tag == "Medication")])
@@ -37,62 +35,45 @@ data_frame_raw[,"smoking_binary"] = ifelse(data_frame_raw[,"smoking_binary"] == 
 behaviors = as.character(mapping$Fields[which(mapping$Tag == "Behavior")])
 data_frame_raw$black_hispanic = as.numeric(data_frame_raw$black | data_frame_raw$hispanic)
 
-data_frame_raw$mrs_delta_3mo_discharge_binary = data_frame_raw$mrs_3months_binary - data_frame_raw$mrs_discharge_binary
-data_frame_raw$mrs_got_worse = data_frame_raw$mrs_delta_3mo_discharge_binary == 1
-
 #Names
 names(data_frame_raw)[names(data_frame_raw)=="black"]="non_hispanic_black"
 
-#Setting up the iterative models
+#Factors
+data_frame_raw$mrs_3_months_factor = as.factor(data_frame_raw$mRS.3.months)
+data_frame_raw$mrs_discharge_factor = as.factor(data_frame_raw$mRS.at.discharge)
+data_frame_raw$mrs_admission_factor = as.factor(data_frame_raw$pre.mRS..admission)
+data_frame_raw$mrs_3months_delta_factor = as.factor(data_frame_raw$mrs_3months_delta)
+data_frame_raw$mrs_3months_minus_discharge_factor = as.factor(data_frame_raw$mrs_3months_minus_discharge)
 
-#outcome = "mrs_3months_binary"
-outcome = "mrs_got_worse"
+#Setting up the iterative models
+iter_names = c("race",
+               "race + baseline mrs",
+               "race + baseline mrs + discharge mrs",
+               "race + baseline mrs + discharge mrs + age + sex", 
+               "race + baseline mrs + discharge mrs + age + sex + health comorbidities",
+               "race + baseline mrs + discharge mrs + age + sex + health comorbidities + health habits")
+
+#outcome = "mrs_3_months_factor"
+outcome = "mrs_3months_delta_factor"
+
 
 model_vars =  list(c("non_hispanic_black", "hispanic"))
-
-if(BASELINE_COVAR){
-  iter_names = c("race",
-                 "race + baseline mrs",
-                 "race + baseline mrs + discharge mrs",
-                 "race + baseline mrs + discharge mrs + age + sex", 
-                 "race + baseline mrs + discharge mrs + age + sex + health comorbidities",
-                 "race + baseline mrs + discharge mrs + age + sex + health comorbidities + health habits")
-  
-  #model_vars = list(c("black_hispanic"))
-  model_vars[[2]] = c(model_vars[[1]], "pre_mrs_binary")
-  model_vars[[3]] = c(model_vars[[2]], "pre_mrs_binary","mrs_discharge_binary")
-  model_vars[[4]] = c(model_vars[[3]], "Age", "sex")
-  model_vars[[5]] = c(model_vars[[4]], comorbs, meds, location)
-  #Commenting out behaviors for now because we'll need to figure out how we want to filter
-  model_vars[[6]] = c(model_vars[[5]], "BMI","smoking")
-}else{
-  iter_names = c("race",
-                 "race + sex",
-                 "race + age + sex", 
-                 "race + age + sex + health comorbidities",
-                 "race + age + sex + health comorbidities + health habits")
-  
-  #model_vars = list(c("black_hispanic"))
-  #model_vars[[2]] = c(model_vars[[1]], "pre_mrs_binary")
-  #model_vars[[3]] = c(model_vars[[2]], "pre_mrs_binary","mrs_discharge_binary")
-  model_vars[[2]] = c(model_vars[[1]], "sex")
-  model_vars[[3]] = c(model_vars[[2]], "Age", "sex")
-  model_vars[[4]] = c(model_vars[[3]], comorbs, meds, location)
-  #Commenting out behaviors for now because we'll need to figure out how we want to filter
-  model_vars[[5]] = c(model_vars[[4]], "BMI","smoking")
-}
-
+#model_vars = list(c("black_hispanic"))
+model_vars[[2]] = c(model_vars[[1]], "mrs_admission_factor")
+model_vars[[3]] = c(model_vars[[2]], "mrs_admission_factor","mrs_discharge_factor")
+model_vars[[4]] = c(model_vars[[3]], "Age", "sex")
+model_vars[[5]] = c(model_vars[[4]], comorbs, meds, location)
+#Commenting out behaviors for now because we'll need to figure out how we want to filter
+model_vars[[6]] = c(model_vars[[5]], "BMI","smoking")
 models=list()
-lm = FALSE
 for(i in 1:length(model_vars)){
-  model_equation = paste(outcome,paste(model_vars[[i]],collapse = " + "),sep=" ~ ")
-  models[[i]]=glm(formula = model_equation, data=data_frame_raw,family = "binomial")
-  if (lm == TRUE){
-    models[[i]]=lm(formula = model_equation, data=data_frame_raw)
-  }
+    model_equation = paste(outcome,paste(model_vars[[i]],collapse = " + "),sep=" ~ ")
+    models[[i]]=clm(model_equation,data = data_frame_raw, Hess=T)
+
   if(i == 6){
     no_missing_df = na.omit(data_frame_raw[,c(model_vars[[i]], outcome)])
-    models[[i]] = glm(formula = model_equation, data = no_missing_df, family="binomial")
+    #models[[i]] = glm(formula = model_equation, data = no_missing_df, family="binomial")
+    models[[i]]=clm(model_equation,data = no_missing_df, Hess=T)
   }
 }
 
@@ -125,7 +106,7 @@ plot_iterative_models <- function(model_list, var_names, iter_names,
     
     model_summary = rbind(model_summary,merged_df)
   }
-
+  
   plot_data = model_summary[,c("est", "ll", "ul", "name","i_name","p")]
   if(print_p){
     plot_data$name = as.factor(paste0(plot_data$name,", p = ",signif(plot_data$p,digits=3)))
@@ -149,8 +130,8 @@ plot_iterative_models <- function(model_list, var_names, iter_names,
 }
 
 plot = plot_iterative_models(model_list = models, 
-                      var_names = c("non_hispanic_black","hispanic"), 
-                      iter_names = iter_names)
+                             var_names = c("non_hispanic_black","hispanic"), 
+                             iter_names = iter_names)
 
 # pdf(paste(save_dir,"ichop_binary_iter_plot.pdf"))
 # plot(plot)
